@@ -7,10 +7,10 @@ import subprocess
 print('serial'+serial.__version__)
 
 # set a port number & baud rate
-PORT = 'COM3'  # 아두이노 열결후 몇번 포트로 연결되는지 확인하고 적어야댐
+PORT = 'COM3'  # 아두이노 연결후 몇번 포트로 연결되는지 확인하고 적어야댐
 BaudRate = 9600
 
-ARD = serial.Serial(PORT, BaudRate)  # 시리얼 톹신을 위한 설정, 선언
+ARD = serial.Serial(PORT, BaudRate)  # 시리얼 통신을 위한 설정, 선언
 
 isDetect = False
 

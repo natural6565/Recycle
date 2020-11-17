@@ -12,6 +12,9 @@
 * Arduino Thread 미지원
 * 미 투입 상황에 지속적인 객체 인식으로 인한 CPU 과부화
 ### 해결방안
-* Arduino와 Python의 통신                              -> Serial 통신
-* Arduino Thread 미지원                                -> 시분할
-* 미 투입 상황에 지속적인 객체 인식으로 인한 CPU 과부화 -> 
+* Arduino와 Python의 통신
+-> Serial 통신
+* Arduino Thread 미지원
+-> 시분할
+* 미 투입 상황에 지속적인 객체 인식으로 인한 CPU 과부화
+->

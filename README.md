@@ -10,8 +10,8 @@
  <img src="https://user-images.githubusercontent.com/69147201/99906379-28b0b100-2d1a-11eb-9b33-3842ce87e15d.PNG" width="200" height="200">
  <img src="https://user-images.githubusercontent.com/69147201/99906380-2baba180-2d1a-11eb-9058-35b342e315b7.PNG" width="200" height="200">
  <img src="https://user-images.githubusercontent.com/69147201/99906382-2ea69200-2d1a-11eb-92ed-843148855b97.PNG" width="200" height="200">
-</div>
-[![자동 분리수거기 시현 영상]((http://img.youtube.com/vi/YS3C54J03Rc/0.jpg)](https://youtu.be/YS3C54J03Rc)
+</div> <br>
+[![자동 분리수거기 시현 영상](http://img.youtube.com/vi/YS3C54J03Rc/0.jpg)](https://youtu.be/YS3C54J03Rc)
 
 ### 시행착오
 * Arduino와 Python의 통신

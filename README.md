@@ -11,6 +11,7 @@
  <img src="https://user-images.githubusercontent.com/69147201/99906380-2baba180-2d1a-11eb-9058-35b342e315b7.PNG" width="200" height="200">
  <img src="https://user-images.githubusercontent.com/69147201/99906382-2ea69200-2d1a-11eb-92ed-843148855b97.PNG" width="200" height="200">
 </div>
+<iframe width="640" height="360" src="https://youtu.be/YS3C54J03Rc" frameborder="0" gesture="media" allowfullscreen=""></iframe>
 
 ### 시행착오
 * Arduino와 Python의 통신

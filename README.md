@@ -12,7 +12,7 @@
  <img src="https://user-images.githubusercontent.com/69147201/99906382-2ea69200-2d1a-11eb-92ed-843148855b97.PNG" width="200" height="200">
 </div>
 <iframe width="640" height="360" src="https://youtu.be/YS3C54J03Rc" frameborder="0" gesture="media" allowfullscreen=""></iframe>
-
+[![Video Label](http://img.youtube.com/vi/uLR1RNqJ1Mw/0.jpg)](https://youtu.be/YS3C54J03Rc)
 ### 시행착오
 * Arduino와 Python의 통신
 * Arduino Thread 미지원

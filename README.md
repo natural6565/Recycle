@@ -11,12 +11,7 @@
  <img src="https://user-images.githubusercontent.com/69147201/99906380-2baba180-2d1a-11eb-9058-35b342e315b7.PNG" width="200" height="200">
  <img src="https://user-images.githubusercontent.com/69147201/99906382-2ea69200-2d1a-11eb-92ed-843148855b97.PNG" width="200" height="200">
 </div>
-<br>
-[![자동 분리수거기 시현 영상](https://img.youtube.com/vi/YS3C54J03Rc/maxresdefault.jpg)](https://youtu.be/YS3C54J03Rc)
-<br>
-<iframe width="640" height="360" src="https://www.youtube.com/watch?v=YS3C54J03Rc" frameborder="0" gesture="media" allowfullscreen=""></iframe>
-<br>
-[![자동 분리수거기 시현 영상](https://img.youtube.com/vi/YS3C54J03Rc/0.jpg)](https://www.youtube.com/watch?v=YS3C54J03Rc&feature=youtu.be)
+[![자동 분리수거기 시현 영상] https://www.youtube.com/watch?v=YS3C54J03Rc&feature=youtu.be
 
 ### 시행착오
 * Arduino와 Python의 통신

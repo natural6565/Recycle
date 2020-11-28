@@ -168,7 +168,7 @@ def detect(save_img=False):
                         for i, m in enumerate(mat):
                             if m > max_mat:
                                 max_mat = i
-                        # 여기서 serial로 max_mat 보내면 댐. 0을 넘기면 아두이노에서 인식을 못함. 그래서 1을 더해서 넘겨주기로 함
+                        # 여기서 serial로 max_mat 보내면 됨 0을 넘기면 아두이노에서 인식을 못함. 그래서 1을 더해서 넘겨주기로 함
                         ARD.write(max_mat+1)
                         print("print", max_mat)
 

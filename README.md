@@ -12,7 +12,7 @@
  <img src="https://user-images.githubusercontent.com/69147201/99906382-2ea69200-2d1a-11eb-92ed-843148855b97.PNG" width="200" height="200">
 </div>
 <br>
-[자동 분리수거기 시현 영상] https://www.youtube.com/watch?v=YS3C54J03Rc&feature=youtu.be
+[자동 분리수거기 시현 영상] https://www.youtube.com/watch?v=ZiAWr1zVF14
 
 ### 시행착오
 * Arduino와 Python의 통신

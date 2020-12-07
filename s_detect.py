@@ -16,7 +16,8 @@ from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import (
     check_img_size, non_max_suppression, apply_classifier, scale_coords,
-    xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
+    xyxy2xywh, strip_optimizer, set_logging)
+from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 import serial
@@ -24,10 +25,10 @@ import serial
 print('serial'+serial.__version__)
 
 # set a port number & baud rate
-PORT = 'COM5'  # 아두이노 연결후 몇번 포트로 연결되는지 확인하고 적어야댐
+PORT = 'COM3'  # 아두이노 연결후 몇번 포트로 연결되는지 확인하고 적어야댐
 BaudRate = 9600
 
-ARD = serial.Serial(PORT, BaudRate)  # 시리얼 통신을 위한 설정, 선언
+ARD = serial.Serial(PORT, BaudRate, timeout=0.1)  # 시리얼 통신을 위한 설정, 선언
 
 
 def detect(save_img=False):
@@ -82,119 +83,122 @@ def detect(save_img=False):
     # run once
     _ = model(img.half() if half else img) if device.type != 'cpu' else None
     for path, img, im0s, vid_cap in dataset:
-        # readable을 통해 값을 받을 수 있으면
-        if ARD.readable():
-            cur = ARD.readline().decode().strip()
-            if cur == "1" or cnt != 0:
+        # 값을 받으면
+        if ARD.readline().decode().strip() == "1" or cnt != 0:
 
-                cnt += 1
+            cnt += 1
 
-                img = torch.from_numpy(img).to(device)
-                img = img.half() if half else img.float()  # uint8 to fp16/32
-                img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                if img.ndimension() == 3:
-                    img = img.unsqueeze(0)
+            img = torch.from_numpy(img).to(device)
+            img = img.half() if half else img.float()  # uint8 to fp16/32
+            img /= 255.0  # 0 - 255 to 0.0 - 1.0
+            if img.ndimension() == 3:
+                img = img.unsqueeze(0)
 
-                # Inference
-                t1 = time_synchronized()
-                pred = model(img, augment=opt.augment)[0]
+            # Inference
+            t1 = time_synchronized()
+            pred = model(img, augment=opt.augment)[0]
 
-                # Apply NMS
-                pred = non_max_suppression(
-                    pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-                t2 = time_synchronized()
+            # Apply NMS
+            pred = non_max_suppression(
+                pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+            t2 = time_synchronized()
 
-                # Apply Classifier
-                if classify:
-                    pred = apply_classifier(pred, modelc, img, im0s)
+            # Apply Classifier
+            if classify:
+                pred = apply_classifier(pred, modelc, img, im0s)
 
-                # Process detections
-                for i, det in enumerate(pred):  # detections per image
-                    if webcam:  # batch_size >= 1
-                        p, s, im0 = path[i], '%g: ' % i, im0s[i].copy()
+            # Process detections
+            for i, det in enumerate(pred):  # detections per image
+                if webcam:  # batch_size >= 1
+                    p, s, im0 = path[i], '%g: ' % i, im0s[i].copy()
+                else:
+                    p, s, im0 = path, '', im0s
+
+                save_path = str(Path(out) / Path(p).name)
+                txt_path = str(Path(out) / Path(p).stem) + ('_%g' %
+                                                            dataset.frame if dataset.mode == 'video' else '')
+                s += '%gx%g ' % img.shape[2:]  # print string
+                # normalization gain whwh
+                gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
+                if det is not None and len(det):
+                    # Rescale boxes from img_size to im0 size
+                    det[:, :4] = scale_coords(
+                        img.shape[2:], det[:, :4], im0.shape).round()
+
+                    # Print results
+                    # det[:, -1]???? 무슨 의미지??
+                    # 한 객체가 여러개 판별된 경우 문자로는 한번만 출력하기 위해 unique사용
+                    for c in det[:, -1].unique():
+                        # detections per class.
+                        n = (det[:, -1] == c).sum()
+                        # add to string
+                        s += '%g %ss, ' % (n, names[int(c)])
+                        # 여기서 c에 판별된 클래스가 들어있음
+                        # 판별된 객체마다 카운트해줌 0 can 1 pls 2 gls
+                        mat[int(c)] += 1
+                else:  # det이 None일 때 -> trsh 1 증가
+                    mat[3] += 1
+
+                # Write results
+                    for *xyxy, conf, cls in reversed(det):
+                        if save_txt:  # Write to file
+                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) /
+                                    gn).view(-1).tolist()  # normalized xywh
+                            # label format
+                            line = (cls, conf, *
+                                    xywh) if opt.save_conf else (cls, *xywh)
+                            with open(txt_path + '.txt', 'a') as f:
+                                f.write(('%g ' * len(line) + '\n') % line)
+
+                        # 프레임에 라벨 씌우기(can 0.7)이런식으로
+                        if save_img or view_img:  # Add bbox to image
+                            label = '%s %.2f' % (names[int(cls)], conf)
+                            plot_one_box(xyxy, im0, label=label,
+                                         color=colors[int(cls)], line_thickness=3)
+
+                # Print time (inference + NMS)
+                print('%sDone. (%.3fs)' % (s, t2 - t1))
+
+                if cnt == 10:
+                    cnt = 0
+                    # can, pls, gls, trsh 중 젤 많이 나온 것을 serial로 보냄
+                    # 나중에 값이 같은 경우도 고려해야 할듯
+                    max_mat = -1
+                    max_value = 0
+                    for i, m in enumerate(mat):
+                        if m > max_value:
+                            max_value = m
+                            max_mat = i
+                    print(mat)
+                    for i in range(4):
+                        mat[i] = 0
+                    # 여기서 serial로 max_mat 보내면 댐. 0을 넘기면 아두이노에서 인식을 못함. 그래서 1을 더해서 넘겨주기로 함
+                    ARD.write(str(max_mat+1).encode())
+                    print("print", max_mat + 1)
+
+                # Stream results
+                if view_img:
+                    cv2.imshow("video", im0)
+                    if cv2.waitKey(1) == ord('q'):  # q to quit
+                        raise StopIteration
+
+                # Save results (image with detections)
+                if save_img:
+                    if dataset.mode == 'images':
+                        cv2.imwrite(save_path, im0)
                     else:
-                        p, s, im0 = path, '', im0s
+                        if vid_path != save_path:  # new video
+                            vid_path = save_path
+                            if isinstance(vid_writer, cv2.VideoWriter):
+                                vid_writer.release()  # release previous video writer
 
-                    save_path = str(Path(out) / Path(p).name)
-                    txt_path = str(Path(out) / Path(p).stem) + ('_%g' %
-                                                                dataset.frame if dataset.mode == 'video' else '')
-                    s += '%gx%g ' % img.shape[2:]  # print string
-                    # normalization gain whwh
-                    gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]
-                    if det is not None and len(det):
-                        # Rescale boxes from img_size to im0 size
-                        det[:, :4] = scale_coords(
-                            img.shape[2:], det[:, :4], im0.shape).round()
-
-                        # Print results
-                        # det[:, -1]???? 무슨 의미지??
-                        # 한 객체가 여러개 판별된 경우 문자로는 한번만 출력하기 위해 unique사용
-                        for c in det[:, -1].unique():
-                            # detections per class.
-                            n = (det[:, -1] == c).sum()
-                            # add to string
-                            s += '%g %ss, ' % (n, names[int(c)])
-                            # 여기서 c에 판별된 클래스가 들어있음
-                            # 판별된 객체마다 카운트해줌 0 can 1 pls 2 gls
-                            mat[int(c)] += 1
-                    else:  # det이 None일 때 -> trsh 1 증가
-                        mat[3] += 1
-
-                    # Write results
-                        for *xyxy, conf, cls in reversed(det):
-                            if save_txt:  # Write to file
-                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) /
-                                        gn).view(-1).tolist()  # normalized xywh
-                                # label format
-                                line = (cls, conf, *
-                                        xywh) if opt.save_conf else (cls, *xywh)
-                                with open(txt_path + '.txt', 'a') as f:
-                                    f.write(('%g ' * len(line) + '\n') % line)
-
-                            # 프레임에 라벨 씌우기(can 0.7)이런식으로
-                            if save_img or view_img:  # Add bbox to image
-                                label = '%s %.2f' % (names[int(cls)], conf)
-                                plot_one_box(xyxy, im0, label=label,
-                                             color=colors[int(cls)], line_thickness=3)
-
-                    # Print time (inference + NMS)
-                    print('%sDone. (%.3fs)' % (s, t2 - t1))
-
-                    if cnt == 10:
-                        cnt = 0
-                        # can, pls, gls, trsh 중 젤 많이 나온 것을 serial로 보냄
-                        # 나중에 값이 같은 경우도 고려해야 할듯
-                        max_mat = -1
-                        for i, m in enumerate(mat):
-                            if m > max_mat:
-                                max_mat = i
-                        # 여기서 serial로 max_mat 보내면 됨 0을 넘기면 아두이노에서 인식을 못함. 그래서 1을 더해서 넘겨주기로 함
-                        ARD.write(max_mat+1)
-                        print("print", max_mat)
-
-                    # Stream results
-                    if view_img:
-                        cv2.imshow("video", im0)
-                        if cv2.waitKey(1) == ord('q'):  # q to quit
-                            raise StopIteration
-
-                    # Save results (image with detections)
-                    if save_img:
-                        if dataset.mode == 'images':
-                            cv2.imwrite(save_path, im0)
-                        else:
-                            if vid_path != save_path:  # new video
-                                vid_path = save_path
-                                if isinstance(vid_writer, cv2.VideoWriter):
-                                    vid_writer.release()  # release previous video writer
-
-                                fourcc = 'mp4v'  # output video codec
-                                fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                                w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                                h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                                vid_writer = cv2.VideoWriter(
-                                    save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
-                            vid_writer.write(im0)
+                            fourcc = 'mp4v'  # output video codec
+                            fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                            w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                            h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            vid_writer = cv2.VideoWriter(
+                                save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
+                        vid_writer.write(im0)
         else:
             if view_img:
                 cv2.imshow("video", im0s[0].copy())

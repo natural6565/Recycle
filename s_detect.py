@@ -25,10 +25,11 @@ import serial
 print('serial'+serial.__version__)
 
 # set a port number & baud rate
-PORT = 'COM3'  # 아두이노 연결후 몇번 포트로 연결되는지 확인하고 적어야댐
+PORT = 'COM7'  # 아두이노 연결후 몇번 포트로 연결되는지 확인하고 적어야댐
 BaudRate = 9600
 
-ARD = serial.Serial(PORT, BaudRate, timeout=0.1)  # 시리얼 통신을 위한 설정, 선언
+ARD = serial.Serial(PORT, BaudRate, timeout=0.1)  # 시리얼 통신을 위한 설정, 선언[;;[]]
+# timeout 값을 계속 받는 것을 방지하고자 추가함 Serial Buffer에 값을 2가지 중 1개 time out이 없으면 시리얼 값이 들어올때까지 멈춤 그래서 타임아웃 설정해서
 
 
 def detect(save_img=False):
@@ -38,7 +39,7 @@ def detect(save_img=False):
         ('rtsp://', 'rtmp://', 'http://')) or source.endswith('.txt')
 
     cnt = 0
-    mat = [0, 0, 0, 0]  # can pls gls trsh
+    mat = [0, 0, 0, 0, 0]  # can pls gls trsh none
 
     # Initialize
     set_logging()
@@ -137,7 +138,7 @@ def detect(save_img=False):
                         # 판별된 객체마다 카운트해줌 0 can 1 pls 2 gls
                         mat[int(c)] += 1
                 else:  # det이 None일 때 -> trsh 1 증가
-                    mat[3] += 1
+                    mat[4] += 1
 
                 # Write results
                     for *xyxy, conf, cls in reversed(det):
@@ -161,18 +162,40 @@ def detect(save_img=False):
 
                 if cnt == 10:
                     cnt = 0
-                    # can, pls, gls, trsh 중 젤 많이 나온 것을 serial로 보냄
+                    # can, pls, gls, (trsh + none) 중 젤 많이 나온 것을 serial로 보냄
                     # 나중에 값이 같은 경우도 고려해야 할듯
                     max_mat = -1
                     max_value = 0
-                    for i, m in enumerate(mat):
-                        if m > max_value:
-                            max_value = m
+                    # for i, m in enumerate(mat):
+                    #     if m > max_value:
+                    #         max_value = m
+                    #         max_mat = i
+                    for i in range(3):
+                        if mat[i] > max_value:
+                            max_value = mat[i]
                             max_mat = i
+                    if sum(mat[3:5]) > max_value:
+                        max_value = sum(mat[3:5])
+                        max_mat = 3  # trsh, none은 합쳐서 3으로 취급
                     print(mat)
-                    for i in range(4):
+                    for i in range(5):
                         mat[i] = 0
-                    # 여기서 serial로 max_mat 보내면 댐. 0을 넘기면 아두이노에서 인식을 못함. 그래서 1을 더해서 넘겨주기로 함
+                    # 여기서 serial로 max_mat 보내면 됨 0을 넘기면 아두이노에서 인식을 못함. 그래서 1을 더해서 넘겨주기로 함
+                    ARD.write(str(max_mat+1).encode())
+                    print("print", max_mat + 1)
+
+                elif mat[0] >= 3 or mat[1] >= 3 or mat[2] >= 3 or mat[3] >= 3:
+                    cnt = 0
+                    max_mat = -1
+                    max_value = 0
+                    for i in range(4):
+                        if mat[i] > max_value:
+                            max_value = mat[i]
+                            max_mat = i
+
+                    for i in range(5):
+                        mat[i] = 0
+
                     ARD.write(str(max_mat+1).encode())
                     print("print", max_mat + 1)
 

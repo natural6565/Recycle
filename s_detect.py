@@ -184,7 +184,7 @@ def detect(save_img=False):
                     ARD.write(str(max_mat+1).encode())
                     print("print", max_mat + 1)
 
-                elif mat[0] >= 3 or mat[1] >= 3 or mat[2] >= 3 or mat[3] >= 3:
+                elif mat[0] >= 4 or mat[1] >= 4 or mat[2] >= 4 or mat[3] >= 4:
                     cnt = 0
                     max_mat = -1
                     max_value = 0
